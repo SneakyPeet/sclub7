@@ -12,6 +12,7 @@
     "strava-v3": "^1.9.0"
   },
   "dependencies": {
-    "async": "^1.5.2"
+    "async": "^1.5.2",
+    "lodash": "^4.3.0"
   }
 }

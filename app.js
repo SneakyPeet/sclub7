@@ -1,6 +1,11 @@
 var argv = require('yargs').argv;
 var strava = require('strava-v3');
 var async = require('async');
+var _ = require('lodash');
+var activityHistory = require('./data/activities.json');
+var fs = require("fs");
+
+console.log('Current activity total: ' + activityHistory.length);
 
 if (!argv.token) {
     console.error('Strava access_token required. See http://strava.github.io/api/#access. Use --token=<access_token>');
@@ -12,41 +17,31 @@ else if (!argv.club) {
 }
 
 function init() {
-  getClubMembers(argv.club, processClubMembers);
+  getClubActvities(argv.club, processClubActivities);
 }
 
-function getClubMembers(clubId, callback) {
+function getClubActvities(clubId, callback) {
   var options = {
     'access_token': argv.token,
     'id': clubId
   };
 
-  console.info('Get Club Members');
-  strava.clubs.listMembers(options, callback);
+  console.info('Get Club Activities');
+  strava.clubs.listActivities(options, callback);
 }
 
-function processClubMembers(err, clubMembers) {
+function processClubActivities(err, activities) {
   checkError(err);
-  async.map(clubMembers, getMemberStatsFunction, getStatsForMembers)
-}
+  var combinedActivities = _.concat(activityHistory, activities);
+  console.log('Combined activity total: ' + combinedActivities.length);
 
-function getMemberStatsFunction(member, callback) {
-  function getMemberStats(callback) {
-    var options = {
-      'access_token': argv.token,
-      'id': member.id
-    }
+  var uniqueActivities = _.uniqWith(combinedActivities, function(a, b) {
+    return a.id === b.id;
+  });
 
-    strava.athletes.stats(options, callback);
-  };
-
-  callback(null, getMemberStats);
-}
-
-function getStatsForMembers(err, statFunctions) {
-  checkError(err);
-  console.info('Get Club Members Stats');
-  console.log(statFunctions);
+  console.log('Saving Activities to data/activities.json');
+  console.log('New activity total: ' + uniqueActivities.length);
+  fs.writeFile( "data/activities.json", JSON.stringify( uniqueActivities ), "utf8", checkError);
 }
 
 function checkError(err) {
