@@ -2,6 +2,7 @@
   "name": "sclub7",
   "version": "1.0.0",
   "description": "Strava Club Info Graphic",
+  "repository": "git@github.com:SneakyPeet/sclub7.git",
   "main": "app.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
