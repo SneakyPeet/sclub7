@@ -1,11 +1,9 @@
 var argv = require('yargs').argv;
 var strava = require('strava-v3');
-var async = require('async');
 var _ = require('lodash');
-var activityHistory = require('./data/activities.json');
 var fs = require("fs");
-
-console.log('Current activity total: ' + activityHistory.length);
+var outputPath = './data/activities.json';
+var activityHistory;
 
 if (!argv.token) {
     console.error('Strava access_token required. See http://strava.github.io/api/#access. Use --token=<access_token>');
@@ -17,15 +15,42 @@ else if (!argv.club) {
 }
 
 function init() {
-  getClubActvities(argv.club, processClubActivities);
+  getOrCreateActivityHistory(outputPath, function (err, history) {
+    checkError(err);
+    activityHistory = history;
+    syncClubActvities(argv.club, processClubActivities);
+  });
 }
 
-function getClubActvities(clubId, callback) {
+function getOrCreateActivityHistory(path, callback) {
+  makeDirIfNotExists('./data/');
+  try {
+    fs.statSync(path);
+    callback(null, require(path));
+  }
+  catch (e) {
+    fs.writeFile(path, '[]', function (err2) {
+      callback(err2, []);
+    });
+  }
+}
+
+function makeDirIfNotExists(path) {
+  try {
+    fs.statSync(path);
+  }
+  catch (e) {
+    fs.mkdirSync(path);
+  }
+}
+
+function syncClubActvities(clubId, callback) {
   var options = {
     'access_token': argv.token,
     'id': clubId
   };
 
+  console.info('Current activity total: ' + activityHistory.length);
   console.info('Get Club Activities');
   strava.clubs.listActivities(options, callback);
 }
@@ -33,15 +58,15 @@ function getClubActvities(clubId, callback) {
 function processClubActivities(err, activities) {
   checkError(err);
   var combinedActivities = _.concat(activityHistory, activities);
-  console.log('Combined activity total: ' + combinedActivities.length);
+  console.info('Combined activity total: ' + combinedActivities.length);
 
   var uniqueActivities = _.uniqWith(combinedActivities, function(a, b) {
     return a.id === b.id;
   });
 
-  console.log('Saving Activities to data/activities.json');
-  console.log('New activity total: ' + uniqueActivities.length);
-  fs.writeFile( "data/activities.json", JSON.stringify( uniqueActivities ), "utf8", checkError);
+  console.info('Saving Activities to ' + outputPath);
+  console.info('New activity total: ' + uniqueActivities.length);
+  fs.writeFile(outputPath, JSON.stringify( uniqueActivities ), "utf8", checkError);
 }
 
 function checkError(err) {
