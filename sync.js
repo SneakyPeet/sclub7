@@ -67,12 +67,10 @@ function sync(token, club, callback) {
 
     console.info('Saving Activities to ' + outputPath);
     console.info('New activity total: ' + uniqueActivities.length);
-    fs.writeFile(outputPath, JSON.stringify( uniqueActivities ), "utf8", complete);
-  }
-
-  function complete(err) {
-    checkError(err);
-    callback(null);
+    fs.writeFile(outputPath, JSON.stringify( uniqueActivities ), "utf8", function (err) {
+      checkError(err);
+      callback(null, uniqueActivities);
+    });
   }
 
   function checkError(err) {
