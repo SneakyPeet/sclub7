@@ -4,6 +4,7 @@ var fs = require("fs");
 
 function sync(token, club, callback) {
   var outputPath = './data/activities.json';
+  var backupPath = './data/backup/';
   var activityHistory;
 
   if (!token) {
@@ -19,15 +20,16 @@ function sync(token, club, callback) {
     getOrCreateActivityHistory(outputPath, function (err, history) {
       checkError(err);
       activityHistory = history;
-      syncClubActvities(club, processClubActivities);
+      backupAndSync(history);
     });
   }
 
   function getOrCreateActivityHistory(path, callback) {
     makeDirIfNotExists('./data/');
+    makeDirIfNotExists(backupPath);
     try {
       fs.statSync(path);
-      callback(null, require(path));
+      callback(null, require('./.'+ path));
     }
     catch (e) {
       fs.writeFile(path, '[]', function (err2) {
@@ -45,10 +47,20 @@ function sync(token, club, callback) {
     }
   }
 
+  function backupAndSync(history) {
+    var fileName = backupPath + 'activities_' + Date.now().toString() + '.json';
+    fs.writeFile(fileName, JSON.stringify( history, null, 2 ), "utf8", function (err) {
+      checkError(err);
+      syncClubActvities(club, processClubActivities);
+    });
+  }
+
   function syncClubActvities(clubId, callback) {
     var options = {
       'access_token': token,
-      'id': clubId
+      'id': clubId,
+      'page': 1,
+      'per_page': 200
     };
 
     console.info('Current activity total: ' + activityHistory.length);
@@ -67,7 +79,7 @@ function sync(token, club, callback) {
 
     console.info('Saving Activities to ' + outputPath);
     console.info('New activity total: ' + uniqueActivities.length);
-    fs.writeFile(outputPath, JSON.stringify( uniqueActivities ), "utf8", function (err) {
+    fs.writeFile(outputPath, JSON.stringify( uniqueActivities, null, 2 ), "utf8", function (err) {
       checkError(err);
       callback(null, uniqueActivities);
     });

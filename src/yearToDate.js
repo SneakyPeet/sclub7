@@ -1,7 +1,15 @@
 var _ = require('lodash');
 
 function yearToDate(activities) {
-  return processActivities({}, activities);
+  var statsObject = processActivities({}, activities);
+
+  var statsArray = [];
+  for (var property in statsObject) {
+    if (statsObject.hasOwnProperty(property)) {
+      statsArray.push(statsObject[property]);
+    }
+  }
+  return statsArray;
 }
 
 function processActivities(state, activities) {
@@ -26,6 +34,7 @@ function addAthleteIfNotExists(athleteId, state, athlete) {
       moving_time_ytd: 0,
       elapsed_time_ytd: 0,
       total_elevation_gain_ytd: 0,
+      total_activities: 0,
     }
   }
 }
@@ -37,6 +46,7 @@ function addActivity(athleteId, state, activity) {
     athlete.moving_time_ytd += activity.moving_time;
     athlete.elapsed_time_ytd += activity.elapsed_time;
     athlete.total_elevation_gain_ytd += activity.total_elevation_gain;
+    athlete.total_activities += 1;
   }
 }
 
